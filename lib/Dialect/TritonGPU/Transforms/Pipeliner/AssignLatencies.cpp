@@ -144,24 +144,20 @@ private:
       return false;
     }
 
-    ttg::SharedEncodingTrait localAllocEnc;
-    if (llvm::any_of(op->getUsers(), [&](Operation *user) {
-          return isa<ttg::LocalAllocOp>(user);
-        })) {
-      for (auto user : op->getUsers()) {
-        auto localAlloc = dyn_cast<ttg::LocalAllocOp>(user);
-        if (!localAlloc)
-          continue;
-        auto enc = mlir::cast<ttg::SharedEncodingTrait>(
-            localAlloc.getType().getEncoding());
-        if (!localAllocEnc) {
-          localAllocEnc = enc;
-        }
-        if (enc != localAllocEnc) {
-          // If the load is used by a LocalAllocOp, all the users need to have
-          // the same encoding.
-          return false;
-        }
+    ttg::SharedEncodingTrait localAllocEnc = nullptr;
+    for (auto user : op->getUsers()) {
+      auto localAlloc = dyn_cast<ttg::LocalAllocOp>(user);
+      if (!localAlloc)
+        continue;
+      auto enc = mlir::cast<ttg::SharedEncodingTrait>(
+          localAlloc.getType().getEncoding());
+      if (!localAllocEnc) {
+        localAllocEnc = enc;
+      }
+      if (enc != localAllocEnc) {
+        // If the load is used by a LocalAllocOp, all the users need to have
+        // the same encoding.
+        return false;
       }
     }
 
